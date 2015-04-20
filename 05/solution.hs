@@ -7,8 +7,40 @@
 -- What is the smallest positive number that is evenly divisible by all of the
 -- numbers from 1 to 20?
 
-primes = 2:3:[ n | n <- [5,7..], isPrime n]
+import Data.List
+import Control.Arrow
 
-isPrime n = null (primeFactors n)
+primes :: [Int]
+primes = 2:[ n | n <- [3,5..], isPrime n]
 
-primeFactors n = filter (\x -> mod n x == 0) (takeWhile (\p -> p*p <= n) primes)
+isPrime :: Int -> Bool
+isPrime n = length (primeFactorize n) == 1
+
+primeFactorize :: Int -> [Int]
+primeFactorize 1 = []
+primeFactorize n = factor : primeFactorize (div n factor)
+    where possibleFactors = takeWhile (\p -> p*p <= n) primes ++ [n]
+          factor = head [ x | x <- possibleFactors, mod n x == 0]
+
+maxCount :: Eq a => a -> [(Int,a)] -> Int
+maxCount x xcounts = maximum $ map fst $ filter (\e -> snd e == x) xcounts
+
+flatten :: [[a]] -> [a]
+flatten = foldl (++) []
+
+pack :: Eq a => [a] -> [(Int,a)]
+pack = map (length &&& head) . group 
+
+unpack :: [(Int,a)] -> [a]
+unpack = flatten . map (\e -> take (fst e) (repeat (snd e)))
+
+commonPrimeFactors :: [Int] -> [Int] 
+commonPrimeFactors xs = unpack [ (maxCount f eachFactorCounts, f) | f <- factors ]
+    where eachFactored = map primeFactorize xs 
+          eachFactorCounts = flatten $ map pack eachFactored
+          factors = nub $ foldl (++) [] eachFactored
+
+leastCommonMultiple :: [Int] -> Int
+leastCommonMultiple = foldl (*) 1 . commonPrimeFactors
+
+main = print $ leastCommonMultiple [1..20]
