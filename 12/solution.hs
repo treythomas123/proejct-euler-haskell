@@ -22,6 +22,24 @@
 -- What is the value of the first triangle number to have over five hundred
 -- divisors?
 
+import Data.List
+
+primes :: [Int]
+primes = 2:[ n | n <- [3,5..], isPrime n]
+
+isPrime :: Int -> Bool
+isPrime n = length (primeFactorize n) == 1
+
+primeFactorize :: Int -> [Int]
+primeFactorize 0 = []
+primeFactorize 1 = []
+primeFactorize n = factor : primeFactorize (div n factor)
+    where possibleFactors = takeWhile (\p -> p*p <= n) primes ++ [n]
+          factor = head [ x | x <- possibleFactors, mod n x == 0]
+
+divisors :: Int -> [Int]
+divisors = nub . map (foldl (*) 1) . subsequences . primeFactorize
+
 triangleNumbers = [ sum [1..n] | n <- [1..] ]
 
-
+main = print $ head $ dropWhile ((<500) . length . divisors) $ triangleNumbers
